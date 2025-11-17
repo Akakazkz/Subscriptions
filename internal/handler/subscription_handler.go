@@ -25,8 +25,6 @@ func NewSubscriptionHandler(r *repo.SubscriptionRepo) *SubscriptionHandler {
 	return &SubscriptionHandler{repo: r}
 }
 
-// RegisterSubscriptionRoutes connects to DB (using config) and registers routes on provided router.
-// We keep a simple single-file helper: it will open db and create repo.
 func RegisterSubscriptionRoutes(r chi.Router, cfg config.Config) {
 	db, err := sqlx.Connect("postgres", cfg.DatabaseURL)
 	if err != nil {
@@ -42,14 +40,13 @@ func RegisterSubscriptionRoutes(r chi.Router, cfg config.Config) {
 	r.Get("/subscriptions/summary", h.Summary)
 }
 
-// Create - POST /subscriptions
 func (h *SubscriptionHandler) Create(w http.ResponseWriter, r *http.Request) {
 	var s model.Subscription
 	if err := json.NewDecoder(r.Body).Decode(&s); err != nil {
 		http.Error(w, "invalid json body: "+err.Error(), http.StatusBadRequest)
 		return
 	}
-	// basic validation
+	
 	if strings.TrimSpace(s.ServiceName) == "" || s.Price <= 0 {
 		http.Error(w, "service_name and positive price required", http.StatusBadRequest)
 		return
@@ -74,7 +71,6 @@ func (h *SubscriptionHandler) Create(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(s)
 }
 
-// List - GET /subscriptions
 func (h *SubscriptionHandler) List(w http.ResponseWriter, r *http.Request) {
 	items, err := h.repo.List()
 	if err != nil {
@@ -89,7 +85,6 @@ func (h *SubscriptionHandler) List(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(items)
 }
 
-// Get - GET /subscriptions/{id}
 func (h *SubscriptionHandler) Get(w http.ResponseWriter, r *http.Request) {
 	idStr := chi.URLParam(r, "id")
 	id, err := uuid.Parse(idStr)
@@ -105,7 +100,6 @@ func (h *SubscriptionHandler) Get(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(s)
 }
 
-// Update - PUT /subscriptions/{id}
 func (h *SubscriptionHandler) Update(w http.ResponseWriter, r *http.Request) {
 	idStr := chi.URLParam(r, "id")
 	id, err := uuid.Parse(idStr)
@@ -127,7 +121,6 @@ func (h *SubscriptionHandler) Update(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(s)
 }
 
-// Delete - DELETE /subscriptions/{id}
 func (h *SubscriptionHandler) Delete(w http.ResponseWriter, r *http.Request) {
 	idStr := chi.URLParam(r, "id")
 	id, err := uuid.Parse(idStr)
@@ -143,7 +136,6 @@ func (h *SubscriptionHandler) Delete(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusNoContent)
 }
 
-// Summary - GET /subscriptions/summary?from=MM-YYYY&to=MM-YYYY&user_id=<uuid>&service_name=<text>
 func (h *SubscriptionHandler) Summary(w http.ResponseWriter, r *http.Request) {
 	from := r.URL.Query().Get("from")
 	to := r.URL.Query().Get("to")
