@@ -83,15 +83,12 @@ func (r *SubscriptionRepo) Delete(id uuid.UUID) error {
 	return err
 }
 
-// Summary: compute total price (rubles) for given period [fromMonth/fromYear .. toMonth/toYear]
-// Filters: optional userID (nil = all) and optional serviceName (empty = all)
-// Strategy: fetch filtered subscriptions and compute overlap months in Go.
 func (r *SubscriptionRepo) Summary(fromMonth, fromYear, toMonth, toYear int, userID *uuid.UUID, serviceName *string) (int, error) {
 	if toYear < fromYear || (toYear == fromYear && toMonth < fromMonth) {
 		return 0, errors.New("invalid period")
 	}
 
-	// build query with optional filters
+	
 	q := `SELECT id, service_name, price, user_id, start_month, start_year, end_month, end_year FROM subscriptions WHERE 1=1`
 	args := []interface{}{}
 	argIdx := 1
@@ -112,7 +109,7 @@ func (r *SubscriptionRepo) Summary(fromMonth, fromYear, toMonth, toYear int, use
 		return 0, err
 	}
 
-	// helper to convert month/year to an absolute month index
+	
 	toIndex := func(month, year int) int {
 		return year*12 + month
 	}
@@ -122,11 +119,11 @@ func (r *SubscriptionRepo) Summary(fromMonth, fromYear, toMonth, toYear int, use
 	total := 0
 	for _, s := range subs {
 		subStartIdx := toIndex(s.StartMonth, s.StartYear)
-		subEndIdx := toIndex(12, 9999) // far future if nil
+		subEndIdx := toIndex(12, 9999) 
 		if s.EndMonth != nil && s.EndYear != nil {
 			subEndIdx = toIndex(*s.EndMonth, *s.EndYear)
 		}
-		// compute overlap
+		
 		start := max(subStartIdx, fromIdx)
 		end := min(subEndIdx, toIdx)
 		if end >= start {
@@ -138,7 +135,7 @@ func (r *SubscriptionRepo) Summary(fromMonth, fromYear, toMonth, toYear int, use
 }
 
 func itoa(i int) string {
-	// small helper to avoid importing strconv everywhere
+	
 	return strconv.Itoa(i)
 }
 
