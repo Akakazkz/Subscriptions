@@ -1,0 +1,42 @@
+services:
+  db:
+    image: postgres:15
+    container_name: subscriptions-db
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: subscriptions
+    ports:
+      - "5432:5432"
+    volumes:
+      - db_data:/var/lib/postgresql/data
+
+  migrate:
+    image: migrate/migrate:v4.15.2
+    depends_on:
+      - db
+    volumes:
+      - ./internal/db/migrations:/migrations
+    command: [
+      "-path", "/migrations",
+      "-database", "postgres://postgres:postgres@db:5432/subscriptions?sslmode=disable",
+      "up"
+    ]
+
+  app:
+    build: .
+    container_name: subscriptions-app
+    depends_on:
+      - db
+      - migrate
+    ports:
+      - "8080:8080"
+    env_file: .env
+
+  adminer:
+    image: adminer
+    ports:
+      - "8081:8080"
+
+volumes:
+  db_data:
